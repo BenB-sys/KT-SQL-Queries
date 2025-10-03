@@ -1,6 +1,6 @@
 USE [Cameo_DWH]
 GO
-/****** Object:  StoredProcedure [dbo].[PUBS_Data_source]    Script Date: 03/10/2025 10:23:26 ******/
+/****** Object:  StoredProcedure [dbo].[PUBS_Data_source]    Script Date: 03/10/2025 11:32:00 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -18,7 +18,7 @@ SELECT
 		LONGDESC) + 0) as SIZE, R_DESCRIPTION, STSPCODE, s.CATEGORY,
 		-- customer data
 	    c1.REP, MFNAME, c1.[NAME] as Customer_Name, c1.CRTNDATE, c1.POSTCODE, c1.ADDR1, c1.ADDR2, c1.ADDR3, c1.ADDR4, c1.COUNTRY, c1.CODE, c1.REPORT,
-		c1.REP as Customer_Rep, c2.NAME as Report_Cus_Name,
+		c2.POSTCODE AS REPORT_POSTCODE, c1.REP as Customer_Rep, c2.NAME as Report_Cus_Name,
 		-- lookup data
 	   su.DESCRIPT as Summary_Description,  p.DESCRIPN as Product_Group,  
 	  	   -- calculated fields
@@ -63,4 +63,6 @@ SELECT
 	YEAR(m.INVDATE) > year(GETDATE())-4
 
 END;
+
+
 
