@@ -1,0 +1,66 @@
+USE [Cameo_DWH]
+GO
+/****** Object:  StoredProcedure [dbo].[PUBS_Data_source]    Script Date: 03/10/2025 10:23:26 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[PUBS_Data_source]
+AS
+BEGIN
+SELECT 
+		-- month list & stock data
+		m.INVDATE as Invoice_Date, m.INVNUM as Invoice_No, m.DEPOT, m.CUSTOMER, YEAR(m.INVDATE) as Invoice_Year, MONTH(m.INVDATE) as Invoice_Month,
+		QUANTITY, LINETOTAL, LINECOST, LINETOTAL - LINECOST as LINEPROFIT, BASEPRICE as AvgSelling,  STWEIGHT, STWEIGHTP, LONGDESC, MS.REASON, m.REP as Document_Rep,
+		m.FITTER, m.REP as MthList_Rep, DONETIME as PRINTTIME, m.VAN, v.DESCRIPN as VAN_RUN, FINAME as FITTER_NAME,
+		-- stock data
+		s.MANUFCTR, s.STCODE, s.DESCRIPN as Product_Description, s.SUMCODE as Sum_Code, s.PRDGRP as Prd_Grp_Code, LEFT(LONGDESC, CHARINDEX(' ', 
+		LONGDESC) + 0) as SIZE, R_DESCRIPTION, STSPCODE, s.CATEGORY,
+		-- customer data
+	    c1.REP, MFNAME, c1.[NAME] as Customer_Name, c1.CRTNDATE, c1.POSTCODE, c1.ADDR1, c1.ADDR2, c1.ADDR3, c1.ADDR4, c1.COUNTRY, c1.CODE, c1.REPORT,
+		c1.REP as Customer_Rep, c2.NAME as Report_Cus_Name,
+		-- lookup data
+	   su.DESCRIPT as Summary_Description,  p.DESCRIPN as Product_Group,  
+	  	   -- calculated fields
+	   CASE
+		WHEN c1.REP = 'KC' THEN 'Central'
+		WHEN c1.REP = 'KE' THEN 'East'
+		WHEN c1.REP = 'KN' THEN 'North'
+		WHEN c1.REP = 'KS' THEN 'South'
+		WHEN c1.REP = 'KW' THEN 'West'
+		WHEN c1.REP = 'HO' THEN 'Head Office'
+		WHEN c1.REP = 'EX' THEN 'Head Office'
+		WHEN LEFT(c1.REP,1) = 'W' THEN 'Wheels'
+		ELSE ''
+		END as Customer_Rep_Region,
+	   CASE
+		WHEN m.REP = 'KC' THEN 'Central'
+		WHEN m.REP = 'KE' THEN 'East'
+		WHEN m.REP = 'KN' THEN 'North'
+		WHEN m.REP = 'KS' THEN 'South'
+		WHEN m.REP = 'KW' THEN 'West'
+		WHEN m.REP = 'HO' THEN 'Head Office'
+		WHEN m.REP = 'EX' THEN 'Head Office'
+		WHEN LEFT(m.REP,1) = 'W' THEN 'Wheels'
+		ELSE ''
+		END as MthList_Rep_Region,
+	   CASE
+		WHEN m.DEPOT = '3' THEN 'Direct'
+		WHEN LEFT(s.STCODE,1) = 'Q' THEN 'OE'
+		ELSE 'Replacement' END AS 'Type'
+	FROM MONTLIST m
+	LEFT JOIN CUSTOMER c1 on CUSTOMER = CODE
+	LEFT JOIN CUSTOMER c2 on c1.REPORT = c2.CODE
+	LEFT JOIN MONTSTK ms on m.INVNUM = ms.INVNUM
+	LEFT JOIN STOCK s on ms.STCODE = s.STCODE
+	LEFT JOIN MANUFCTR mf on s.MANUFCTR = MFCODE
+	LEFT JOIN SUMMARY su on s.SUMCODE = su.SUMCODE
+	LEFT JOIN PGROUP p on s.PRDGRP = p.CODE
+	LEFT JOIN LOOKUP_REASON_DESC lrd on ms.REASON = lrd.CODE
+	LEFT JOIN VANRUN v on m.VAN = NUMBER
+	LEFT JOIN FITTER f on m.FITTER = FICODE
+	WHERE --c.COUNTRY <> 'IE' AND s.SUMCODE NOT IN ('1', '2', '4', '5') AND 
+	YEAR(m.INVDATE) > year(GETDATE())-4
+
+END;
+
